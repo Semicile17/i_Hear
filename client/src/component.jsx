@@ -68,7 +68,7 @@ const ASLRecorder = () => {
     }, [recording, mediaRecorder, audioBlob]);
 
     return (
-        <div>
+        <div className='flex flex w-full h-screen justify-center itens-center'>
             <h1>ASL Recorder</h1>
             <button onClick={handleRecordingToggle}>
                 {recording ? 'Stop Recording' : 'Start Recording'}

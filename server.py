@@ -1,8 +1,12 @@
 from flask import Flask, request, jsonify
 import os
 import speech_recognition as sr
+from pydub import AudioSegment
+from flask_cors import CORS
+import tempfile
 
 app = Flask(__name__)
+CORS(app)
 
 # Path to the folder with ASL images' names, each corresponding to a word or letter
 ASL_IMAGES_PATH = "/home/semicile/TULA/i_Hear/assets"
@@ -10,17 +14,24 @@ ASL_IMAGES_PATH = "/home/semicile/TULA/i_Hear/assets"
 # Function to convert audio to text
 def convert_audio_to_text(audio_file):
     recognizer = sr.Recognizer()
-    audio = sr.AudioFile(audio_file)
     
-    with audio as source:
-        audio_data = recognizer.record(source)
-    
-    try:
-        # Convert speech to text
-        text = recognizer.recognize_google(audio_data)
-        return text.lower()  # Return in lowercase for easier mapping
-    except sr.UnknownValueError:
-        return None  # Handle case when speech is not recognized
+    # Create a temporary file to store the converted audio
+    with tempfile.NamedTemporaryFile(suffix=".wav") as temp_wav_file:
+        try:
+            # Convert the audio file to WAV format using pydub
+            audio = AudioSegment.from_file(audio_file)
+            audio.export(temp_wav_file.name, format="wav")
+            
+            # Use the converted WAV file for speech recognition
+            with sr.AudioFile(temp_wav_file.name) as source:
+                audio_data = recognizer.record(source)
+            
+            # Convert speech to text
+            text = recognizer.recognize_google(audio_data)
+            return text.lower()  # Return in lowercase for easier mapping
+        except Exception as e:
+            print(f"Error processing audio: {e}")
+            return None
 
 # Route to handle file uploads and return ASL image names
 @app.route('/audio-to-asl', methods=['POST'])
